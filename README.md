@@ -5,12 +5,12 @@
 
 Repo utilizado para elaborar el trabajo en equipo para la asignatura "Programación y manejo de datos en la era del Big Data"
 de la Universitat de València durante el curso 2025-2026. 
-La página web de la asignatura puede verse aquí: <https://mariandelfa.github.io/trabajo_BigData_equipo/>.
+La página web de la asignatura puede verse aquí: <https://perezp44.github.io/intro-ds-25-26-web/>.
 
 
 
 <!-- En la linea de abajo HAS de SUSTITUIR "perezp44" por tu usuario de Github-->
-La versión final del trabajo puede visualizarse en: <http://localhost:4445/>. 
+La versión final del trabajo puede visualizarse en: <https://mariandelfa.github.io/trabajo_BigData_equipo/>. 
 
 
 <!-- Abajo podéis escribir lo que queráis, igual un resumen del trabajo, o ..., o ... 
