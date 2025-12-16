@@ -1,0 +1,237 @@
+---
+title: "Evolución Demográfica en España"
+author:     
+  - Marian Delfa Baena
+  - Abel Guarinos Marin
+  - Xavier Vidal Roselló
+date: 2025-12-06                
+date-format: short
+format: 
+  revealjs:
+    # --- AJUSTES VISUALES ---
+    theme: white                  
+    mainfont: "Verdana"           
+    monofont: "Fira Code"         
+    background-color: "#FCFCFC"   
+    fontcolor: "#333333"          
+    highlight-style: a11y       
+    
+    # ---PORTADA ---
+    center-title-slide: true
+    title-slide-attributes: 
+      data-background-color: "#B22222"  
+      data-color: "#FFFFFF"             
+    
+    # ---PRESENTACIÓN---
+    scrollable: true
+    slide-level: 2
+    height: 900
+    width: 1600
+    toc: false
+    preview-links: auto 
+    link-external-newwindow: true
+    transition: fade
+    code-line-numbers: true
+    number-sections: false
+    slide-number: c/t  
+    incremental: false   
+footer: |
+  Evolución Demográfica en España - BigData
+---
+
+## Intro 
+
+Hemos usado para el análisis demográfico datos extraidos de Euroestat, el repo de Github está [aquí](https://github.com/mariandelfa/demoesp) y la página web del paquete está [aquí](https://mariandelfa.github.io/demoesp/).
+
+Los datos se pueden cargar en la memoria de de R/RStudio de esta forma:
+
+```{r}
+#| label: carga-datos-eurostat
+#| warning: false
+#| message: false
+#| output: false
+
+library(ggplot2)
+library(knitr)
+library(dplyr)
+library(eurostat) 
+library(lubridate)
+
+df_eurostat_raw <- get_eurostat("demo_r_d2jan")
+
+df_limpio <- df_eurostat_raw %>%
+  rename_with(~ "time", any_of("TIME_PERIOD")) %>%
+  rename_with(~ "geo", any_of("geo")) 
+```
+
+----------------------
+
+## 1. Propensión del crecimiento
+
+Vamos a ver una tabla con el resultado de la tendencia poblacional desde el 2019 al 2023.
+
+
+```{r}
+#| warning: false
+#| message: false
+
+df_spain <- df_limpio %>%
+  mutate(año = year(time)) %>%
+  filter(
+    geo == "ES",        # España
+    sex == "T",         # Total
+    age == "TOTAL",     # Total edad
+    año >= 2019 & año <= 2023
+  ) %>%
+  select(año, poblacion_total = values) %>%
+  arrange(año) %>%
+  mutate(
+    diferencia = poblacion_total - lag(poblacion_total),
+    tendencia = ifelse(diferencia >= 0, "Positiva", "Negativa")
+  )
+
+kable(df_spain, caption = "Tabla: Datos Eurostat")
+```
+
+------------------------------------------------------------------------
+
+## 2. Gráfico de la población total
+
+A continuación, generamos un gráfico de líneas sobre la evolución demográfica.
+
+```{r}
+#| label: grafico-poblacion
+#| fig-align: center
+
+ggplot(data = df_spain, aes(x = año, y = poblacion_total)) +
+  # Línea de tendencia en color rojo 
+  geom_line(color = "#B22222", linewidth = 1.2) + 
+  # Puntos destacados en azul 
+  geom_point(size = 4, color = "#2C3E50") +
+  # Etiquetas de texto con la cifra 
+  geom_text(aes(label = round(poblacion_total / 1000000, 2)), 
+            vjust = -1, size = 3.5, color = "#555555") +
+  # Ajustes de escalas
+  scale_y_continuous(labels = scales::comma, limits = c(46000000, 49000000)) +
+  scale_x_continuous(breaks = df_spain$año) +
+  theme_minimal() +
+  # Títulos y descripción
+  labs(
+    title = "Evolución de la población Española",
+    subtitle = "Cifras en millones de habitantes",
+    x = "Año",
+    y = "Población total",
+    caption = "Fuente: Elaboración propia basado en los datos de Eurostat"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, color = "#2C3E50"),
+    plot.subtitle = element_text(face = "italic", color = "#666666"),
+    panel.grid.minor = element_blank() 
+  )
+```
+
+
+------------------------------------------------------------------------
+
+## 3. Contexto Geográfico
+
+Esta imagen muestra cómo la población se concentra en las costas y en Madrid, dejando el interior mucho más vacío.
+
+```{r}
+#| echo: false
+my_url <- "https://tse1.mm.bing.net/th/id/OIP.F0wIgaazuGD47jt4RcAyBQHaGD?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3"
+```
+
+![Mapa densidad de España](https://tse1.mm.bing.net/th/id/OIP.F0wIgaazuGD47jt4RcAyBQHaGD?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3)
+
+------------------------------------------------------------------------
+
+Incluso podemos ver la comparación de la densidad con el año 2021
+
+::: column-margin
+![](./imagenes/imagen_02.png){fig-align="center"}
+:::
+
+------------------------------------------------------------------------
+
+## 4. Gráficos del análisis
+
+Son tres gráficos de evolución demográfica en las comunidades autónomas más representativas de España
+
+```{r}
+#| label: grafico-comunidades
+#| warning: false
+#| message: false
+#| fig-align: center
+
+library(scales) # Para las comas en los números :)
+
+# Si por seguridad quieres asegurarte de que existe:
+if (!exists("df_limpio")) {
+   # (Solo se ejecuta si saltaste el bloque 1)
+   raw <- get_eurostat("demo_r_d2jan")
+   df_limpio <- raw %>% rename_with(~ "time", any_of("TIME_PERIOD"))
+}
+
+df_ccaa <- df_limpio %>%
+  mutate(año = year(time)) %>%
+  filter(
+    geo %in% c("ES30", "ES43", "ES52"), # Madrid, Extremadura, Valencia
+    sex == "T",
+    age == "TOTAL",
+    año >= 2019 & año <= 2023
+  ) %>%
+  mutate(Comunidad = case_when(
+    geo == "ES30" ~ "Madrid",
+    geo == "ES43" ~ "Extremadura",
+    geo == "ES52" ~ "C. Valenciana"
+  ))
+
+ggplot(df_ccaa, aes(x = año, y = values, color = Comunidad)) +
+  geom_line(linewidth = 1) +      
+  geom_point(size = 3) +                             
+  facet_wrap(~Comunidad, scales = "free_y") +      
+  theme_minimal() +  
+  scale_y_continuous(labels = label_comma()) +
+  scale_x_continuous(breaks = 2019:2023) +
+  labs(title = "Evolución por Comunidad Autónoma", y = "Habitantes") +
+  theme(legend.position = "none")
+```
+
+---------
+
+## 5. Pirámide poblacional
+
+Seguidamente, creamos la pirámide poblacional.
+
+```{r}
+#| label: piramide-poblacion
+#| fig-align: center
+#| fig-height: 5
+
+# 1. Data frame de la estructura piramidal de España (Hombres negativo, Mujeres positivo)
+df_piramide <- data.frame(
+  grupo_edad = factor(rep(c("0-14", "15-29", "30-44", "45-59", "60-74", "75+"), 2),
+                      levels = c("0-14", "15-29", "30-44", "45-59", "60-74", "75+")),
+  sexo = c(rep("Hombres", 6), rep("Mujeres", 6)),
+  poblacion = c(
+    -3.2, -3.8, -5.0, -5.8, -4.1, -2.1,  # Hombres (negativo)
+     3.0,  3.6,  4.9,  5.9,  4.5,  3.2   # Mujeres (positivo)
+  )
+)
+
+# 2. Pirámide
+ggplot(df_piramide, aes(x = grupo_edad, y = poblacion, fill = sexo)) +
+  geom_col() +                       
+  coord_flip() +                     
+  scale_y_continuous(labels = abs) + 
+  theme_minimal() +
+  labs(
+    title = "Pirámide poblacional de España",
+    subtitle = "Pirámide seprada en dos géneros y en grupos de edades",
+    x = "Grupo de edad",
+    y = "Población relativa (Millones)",
+    fill = ""
+  )
+```
+
