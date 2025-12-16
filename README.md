@@ -5,7 +5,7 @@
 
 Repo utilizado para elaborar el trabajo en equipo para la asignatura "Programación y manejo de datos en la era del Big Data"
 de la Universitat de València durante el curso 2025-2026. 
-La página web de la asignatura puede verse aquí: <https://perezp44.github.io/intro-ds-25-26-web/>.
+La página web de la asignatura puede verse aquí: <https://mariandelfa.github.io/trabajo_BigData_equipo/>.
 
 
 
